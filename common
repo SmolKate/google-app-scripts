@@ -1,0 +1,29 @@
+/**
+ * Функция возвращает объект класса Range для всех ячеек по названию колонки за исключением ячейки с названием
+ * @param {object} sheet - лист, по которому происходит поиск нужной колонки
+ * @param {string} columnName - название колонки
+ * @param {number} row - номер строки, начиная с которой забираются данные
+ * @param {boolean} all - если true, то берутся все ячейки до конца документа, если false (default), то берутся только ячейки до последней строчки, содержащей данные
+ */
+function getCellRangeByColumnName_(sheet, columnName, row, all=false) {
+  let column = getColumnIndexByName_(sheet, columnName)
+  if (column != -1) {
+    if (all) {
+      return sheet.getRange(row, column + 1, sheet.getMaxRows())
+    }
+    return sheet.getRange(row, column + 1, sheet.getLastRow())
+  }
+  SpreadsheetApp.getUi().alert(`Проверьте, пожалуйста, наличие столбца ${columnName}`)
+}
+
+/**
+ * Функция возвращает индекс колонки по ее названию
+ * @param {object} sheet - лист, по которому происходит поиск нужной колонки
+ * @param {string} columnName - название колонки
+ * @returns {number} - если такой колонки нет, то возвращает -1
+ */
+function getColumnIndexByName_(sheet, columnName) {
+  let data = sheet.getDataRange().getValues()
+  let column = data[0].indexOf(columnName)
+    return column
+}
