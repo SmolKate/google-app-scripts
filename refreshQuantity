@@ -1,0 +1,55 @@
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx1yfGYp5C4r7-Fku_vlQRngSbSI5b8633n5Arn7Knu0PyPo0GlSJU8x630nGh6EdVDnw/exec' //URL поставщика
+
+let token
+/**
+ * Для решения данной задачи разрешается производить любые изменения в текущий код
+ */
+
+/**
+ * Функция возвращает тело запроса, содержащее указанные параметры
+ * @param {string} apiMethod 
+ * @returns {object}
+ */
+function getRequestOptions_(method, token = ''){
+  const payload = JSON.stringify({ //тело запроса
+    method, 
+    access_token: token
+  })
+
+  const requestOptions = {
+    method: 'POST',
+    muteHttpExceptions: true,
+    payload
+  }
+
+  return requestOptions
+}
+
+/**
+ * Функция получает и записывает токен для доступа к специальным методам
+ * @returns null
+ */
+function getToken() {
+  let response = UrlFetchApp.fetch(WEBAPP_URL, getRequestOptions_('getAccessToken'))
+  let data = JSON.parse(response)
+  if (data.status === 'false') {
+    SpreadsheetApp.getUi().alert(`Ошибка: ${data.error}`)
+  }
+  token = data.access_token
+
+  return null
+}
+
+/**
+ * Функция возвращает список позиций, доступных для заказа
+ * @returns {?{id: number, name: string, description: string, quantity: number}[]}
+ */
+function getData() {
+  let response = UrlFetchApp.fetch(WEBAPP_URL, getRequestOptions_('getAvailableItems', token))
+  let data = JSON.parse(response)
+  if (data.status === 'false') {
+    SpreadsheetApp.getUi().alert(`Ошибка: ${data.error}`)
+  }
+
+  return data.items
+}
