@@ -1,0 +1,70 @@
+/**
+ * Функция запускается после загрузки таблицы. Она добавляет кастомные кнопки в меню и создает выпадающие списки на листе "Ассортимент" в поле name, которые содержат названия всех товарных единиц с листа "Справочник".
+ */
+function onOpen() {
+  // добавление кнопок в меню
+  let ui = SpreadsheetApp.getUi()
+  ui.createMenu('Синхронизация')
+  .addItem('Загрузить информацию об остатках', 'loadData')
+  .addToUi()
+
+  let activeSS = SpreadsheetApp.getActiveSpreadsheet()
+  let sheet = activeSS.getSheetByName('Ассортимент')
+  let sheetDb = activeSS.getSheetByName('Справочник')
+
+  let cellRange = getCellRangeByColumnName_(sheet, 'name', 2, true) // получение диапазона всех ячеек в поле name
+  let dataRange = getCellRangeByColumnName_(sheetDb, 'Товарные позиции', 2) // получение диапазона всех ячеек, содержащие данные, в поле Товарные позиции
+  
+  // создание выпадающих списков
+  let validation = SpreadsheetApp.newDataValidation().requireValueInRange(dataRange).build()
+  cellRange.setDataValidation(validation)
+}
+
+/**
+ * Функция получает данные об остатках по API и выводит эту информацию в поле quantity листа "Ассортимент"
+ */
+function loadData() {
+  let activeSS = SpreadsheetApp.getActiveSpreadsheet()
+  let sheet = activeSS.getSheetByName('Ассортимент')
+
+  // составление списка товарных единиц, указанных в поле name
+  let values = getCellRangeByColumnName_(sheet, 'name', 2).getValues()
+  let len = getCellRangeByColumnName_(sheet, 'id', 2).getValues().length - 1
+
+  let valuesArray = []
+  for (let i = 0; (i < values.length) && (i < len); i++) {
+    let item = ''
+    if (values[i][0]) {
+      item = values[i][0]
+    }
+    valuesArray.push(item)
+  }
+  
+  // получение токена и данных по остаткам
+  getToken()
+  let data = getData()
+
+  let quantityArray = []
+  for (let i = 0; i < valuesArray.length; i++) {
+    let quantity = ['']
+    for (let j = 0; j < data.length; j++) {
+      if (valuesArray[i] == data[j].name) {
+        quantity = [data[j].quantity]
+      }
+    }
+    quantityArray.push(quantity)
+  }
+  
+  // добавление списка остатков в поле quantity
+  let quantityRange
+  let column = getColumnIndexByName_(sheet, 'quantity')
+  if (column !== -1) {
+    quantityRange = sheet.getRange(2, column + 1, quantityArray.length)
+  } else {
+    SpreadsheetApp.getUi().alert("Колонка quantity отсутствует");
+  }
+
+  if(quantityRange){
+    quantityRange.setValues(quantityArray)
+  }
+}
