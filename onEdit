@@ -1,0 +1,48 @@
+/**
+ * Функция запускается при изменении ячейки. Она обеспечивает, чтобы при выборе товарной единицы в выпадающем списке name, информация в полях description и id отображалась автоматически.
+ */
+function onEdit(e) {
+  let activeSS = SpreadsheetApp.getActiveSpreadsheet()
+  let sheet = activeSS.getSheetByName('Ассортимент')
+  let sheetDb = activeSS.getSheetByName('Справочник')
+
+  // автоматическое заполение ячеек в полях description и id 
+  let editedCellRange = e.range
+  autoFillByColumnName_(sheetDb, sheet, 'id', 'id', editedCellRange)
+  autoFillByColumnName_(sheetDb, sheet, 'описание', 'description', editedCellRange)
+}
+
+/**
+ * Функция выполняет автозаполнение ячейки
+ * @param {object} srcSheet - лист, откуда забираются данные
+ * @param {object} targetSheet - лист, куда вставляются данные
+ * @param {string} srcColumnName - название колонки, из которой забираются данные
+ * @param {string} targetColumnName - название колонки, в которую вставляются данные
+ * @param {object} editedCellRange - объект класса Range со свойствами и методами измененной ячейки
+ */
+function autoFillByColumnName_(srcSheet, targetSheet, srcColumnName, targetColumnName, editedCellRange) {
+  let selectedValue = editedCellRange.getValue() // значение в измененной ячейке
+
+  // определение ячейки, из которой нужно забрать данные, и ячейки, в которую нужно вставить эти данные
+  let targetColumn = getColumnIndexByName_(targetSheet, targetColumnName) + 1
+  let srcColumn = getColumnIndexByName_(srcSheet, srcColumnName) + 1
+  let targetRow = editedCellRange.getLastRow()
+  let srcRow
+  let values = getCellRangeByColumnName_(srcSheet, 'Товарные позиции', 2).getValues()
+  for (let i = 0; i < values.length; i++) {
+    if (values[i][0] === selectedValue) {
+      srcRow = i + 2
+    }
+  }
+
+  // получение данных и автозаполнение ячейки
+  let srcValue = ''
+  if (selectedValue !== '') {
+    srcValue = srcSheet.getRange(srcRow, srcColumn).getValue()
+  }
+  if (targetColumn === 0 || srcColumn === 0) {
+    SpreadsheetApp.getUi().alert(`Проверьте, пожалуйста, наличие колонок ${srcColumnName} и ${targetColumnName}`);
+  } else {
+    targetSheet.getRange(targetRow, targetColumn).setValue(srcValue)
+  }
+}
